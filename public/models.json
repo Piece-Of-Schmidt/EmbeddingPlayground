@@ -1,0 +1,10 @@
+[
+  {
+    "id": "glove_50d",
+    "label": "GloVe 6B 50d"
+  },
+  {
+    "id": "glove_300d",
+    "label": "GloVe 6B 300d"
+  }
+]
