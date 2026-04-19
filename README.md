@@ -1,5 +1,7 @@
 # EmbeddingPlayground
 
+👉 **[Try the live demo](https://embedding-playground.netlify.app/)**
+
 An interactive, browser-based tool for exploring GloVe word embeddings. Built for teaching NLP concepts.
 
 ## Quick Start
