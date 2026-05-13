@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Word Embeddings Explained · GloVe Explorer</title>
+  <style>
+    :root {
+      --blue:      #3b82f6;
+      --blue-dim:  #dbeafe;
+      --blue-pale: #eff6ff;
+      --red:       #ef4444;
+      --red-dim:   #fee2e2;
+      --green:     #22c55e;
+      --green-dim: #dcfce7;
+      --amber:     #f59e0b;
+      --slate-50:  #f8fafc;
+      --slate-100: #f1f5f9;
+      --slate-200: #e2e8f0;
+      --slate-300: #cbd5e1;
+      --slate-400: #94a3b8;
+      --slate-500: #64748b;
+      --slate-600: #475569;
+      --slate-700: #334155;
+      --slate-800: #1e293b;
+      --slate-900: #0f172a;
+      --header-h:  52px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--slate-50);
+      color: var(--slate-800);
+      line-height: 1.72;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────────────────── */
+    .page-header {
+      height: var(--header-h);
+      background: #fff;
+      border-bottom: 1px solid var(--slate-200);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: .95rem;
+      color: var(--slate-800);
+      text-decoration: none;
+    }
+    .header-nav {
+      margin-left: auto;
+      display: flex;
+      gap: 6px;
+    }
+    .nav-link {
+      font-size: .82rem;
+      color: var(--slate-500);
+      text-decoration: none;
+      padding: 4px 12px;
+      border-radius: 6px;
+      transition: background .12s, color .12s;
+    }
+    .nav-link:hover    { background: var(--slate-100); color: var(--slate-800); }
+    .nav-link.active   { background: var(--blue-pale); color: var(--blue); }
+
+    /* ── ToC strip ──────────────────────────────────────────────────────────── */
+    .toc-bar {
+      background: #fff;
+      border-bottom: 1px solid var(--slate-200);
+      padding: 8px 24px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .toc-link {
+      font-size: .75rem;
+      color: var(--slate-500);
+      text-decoration: none;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--slate-200);
+      transition: all .12s;
+      white-space: nowrap;
+    }
+    .toc-link:hover { background: var(--blue-pale); color: var(--blue); border-color: #bfdbfe; }
+
+    /* ── Page layout ────────────────────────────────────────────────────────── */
+    .page-body {
+      max-width: 740px;
+      margin: 0 auto;
+      padding: 52px 24px 100px;
+    }
+
+    /* ── Hero ───────────────────────────────────────────────────────────────── */
+    .hero {
+      text-align: center;
+      margin-bottom: 64px;
+    }
+    .hero-eyebrow {
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--blue);
+      margin-bottom: 10px;
+    }
+    .hero h1 {
+      font-size: 2.3rem;
+      font-weight: 800;
+      color: var(--slate-900);
+      line-height: 1.2;
+      margin-bottom: 16px;
+    }
+    .hero p {
+      font-size: 1.05rem;
+      color: var(--slate-500);
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    /* ── Section ────────────────────────────────────────────────────────────── */
+    .section { margin-bottom: 68px; }
+    .section-num {
+      font-size: .7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      color: var(--blue);
+      margin-bottom: 6px;
+    }
+    .section h2 {
+      font-size: 1.65rem;
+      font-weight: 700;
+      color: var(--slate-900);
+      line-height: 1.25;
+      margin-bottom: 18px;
+    }
+    .section p { color: var(--slate-700); margin-bottom: 14px; }
+    .section p:last-child { margin-bottom: 0; }
+    strong { color: var(--slate-900); }
+    em     { color: var(--slate-600); }
+
+    hr.divider {
+      border: none;
+      border-top: 1px solid var(--slate-200);
+      margin: 28px 0;
+    }
+
+    /* ── Callout / quote ────────────────────────────────────────────────────── */
+    .callout {
+      background: var(--blue-pale);
+      border-left: 4px solid var(--blue);
+      border-radius: 0 10px 10px 0;
+      padding: 14px 20px;
+      margin: 22px 0;
+      color: var(--slate-700);
+    }
+    .callout.amber {
+      background: #fffbeb;
+      border-color: var(--amber);
+    }
+
+    /* ── Info box ───────────────────────────────────────────────────────────── */
+    .info-box {
+      background: #fff;
+      border: 1px solid var(--slate-200);
+      border-radius: 12px;
+      padding: 18px 22px;
+      margin: 20px 0;
+    }
+    .info-box-title {
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--slate-400);
+      margin-bottom: 10px;
+    }
+
+    /* ── Pros / cons list ───────────────────────────────────────────────────── */
+    .check-list { list-style: none; margin: 10px 0; }
+    .check-list li {
+      padding: 5px 0 5px 26px;
+      position: relative;
+      color: var(--slate-700);
+      font-size: .95rem;
+    }
+    .check-list li::before { position: absolute; left: 0; }
+    .check-list.pros li::before { content: '✓'; color: var(--green); font-weight: 700; }
+    .check-list.cons li::before { content: '✗'; color: var(--red);   font-weight: 700; }
+
+    /* ── Context cards ──────────────────────────────────────────────────────── */
+    .context-row { display: flex; gap: 14px; flex-wrap: wrap; margin: 20px 0; }
+    .context-card {
+      flex: 1;
+      min-width: 200px;
+      background: var(--slate-50);
+      border: 1px solid var(--slate-200);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+    .context-card h5 {
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--slate-400);
+      margin-bottom: 10px;
+    }
+    .context-card p {
+      font-size: .9rem;
+      line-height: 2;
+      color: var(--slate-700);
+      margin: 0;
+    }
+    .hl { background: #fef9c3; color: #78350f; padding: 1px 5px; border-radius: 3px; font-weight: 700; }
+
+    /* ── Word arithmetic display ────────────────────────────────────────────── */
+    .word-math {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 22px 0;
+      font-size: 1.05rem;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 16px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1rem;
+    }
+    .pill-a  { background: var(--blue-dim);  color: #1d4ed8; }
+    .pill-b  { background: var(--red-dim);   color: #b91c1c; }
+    .pill-c  { background: var(--green-dim); color: #166534; }
+    .pill-r  { background: var(--slate-800); color: #fff; }
+    .op      { color: var(--slate-400); font-size: 1.2rem; font-weight: 300; }
+
+    /* ── Demo boxes ─────────────────────────────────────────────────────────── */
+    .demo-box {
+      background: #fff;
+      border: 1px solid var(--slate-200);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 24px 0;
+      box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    }
+    .demo-head {
+      background: var(--slate-50);
+      border-bottom: 1px solid var(--slate-200);
+      padding: 9px 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: .73rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--slate-400);
+    }
+    .demo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); }
+    .demo-body { padding: 20px; }
+
+    /* DFM demo */
+    .dfm-rows { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+    .dfm-row  { display: flex; align-items: center; gap: 10px; }
+    .dfm-doc-label {
+      font-size: .78rem;
+      font-weight: 700;
+      color: var(--slate-500);
+      min-width: 48px;
+      text-align: right;
+    }
+    .dfm-input {
+      flex: 1;
+      padding: 7px 12px;
+      border: 1px solid var(--slate-200);
+      border-radius: 8px;
+      font-size: .88rem;
+      font-family: inherit;
+      color: var(--slate-800);
+      background: var(--slate-50);
+      outline: none;
+      transition: border-color .15s, background .15s;
+    }
+    .dfm-input:focus { border-color: var(--blue); background: #fff; }
+
+    .dfm-scroll { overflow-x: auto; }
+    .dfm-table {
+      border-collapse: collapse;
+      font-size: .8rem;
+      white-space: nowrap;
+      width: 100%;
+    }
+    .dfm-table th {
+      background: var(--slate-50);
+      border: 1px solid var(--slate-200);
+      padding: 5px 10px;
+      font-weight: 600;
+      color: var(--slate-600);
+      text-align: center;
+    }
+    .dfm-table td {
+      border: 1px solid var(--slate-200);
+      padding: 5px 10px;
+      text-align: center;
+      color: var(--slate-600);
+    }
+    .dfm-table td.row-label {
+      text-align: left;
+      font-family: ui-monospace, monospace;
+      font-weight: 600;
+      color: var(--slate-600);
+      background: var(--slate-50);
+      font-size: .76rem;
+    }
+    .dfm-table td.nz { background: var(--blue-dim); color: #1d4ed8; font-weight: 700; }
+    .dfm-stat {
+      font-size: .78rem;
+      color: var(--slate-400);
+      font-style: italic;
+      margin-top: 12px;
+    }
+
+    /* Cosine demo */
+    #cos-canvas { display: block; margin: 0 auto; }
+    .cos-controls {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      margin-top: 14px;
+    }
+    .cos-label { font-size: .85rem; color: var(--slate-600); display: flex; align-items: center; gap: 8px; }
+    #cos-score {
+      font-size: 1.15rem;
+      font-weight: 700;
+      min-width: 100px;
+      text-align: center;
+    }
+    .cos-hint {
+      font-size: .78rem;
+      color: var(--slate-400);
+      font-style: italic;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    /* ── Comparison table ───────────────────────────────────────────────────── */
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .85rem;
+      margin: 16px 0;
+    }
+    .compare-table th {
+      padding: 8px 12px;
+      border-bottom: 2px solid var(--slate-200);
+      color: var(--slate-500);
+      font-weight: 600;
+      text-align: center;
+    }
+    .compare-table th:first-child { text-align: left; }
+    .compare-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--slate-100);
+      color: var(--slate-700);
+      text-align: center;
+    }
+    .compare-table td:first-child { text-align: left; color: var(--slate-600); }
+
+    /* ── Training task box ──────────────────────────────────────────────────── */
+    .task-grid { display: flex; gap: 12px; flex-wrap: wrap; margin: 18px 0; }
+    .task-card {
+      flex: 1;
+      min-width: 200px;
+      border: 1px solid var(--slate-200);
+      border-radius: 10px;
+      padding: 14px 16px;
+      background: #fff;
+    }
+    .task-card h5 {
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--slate-400);
+      margin-bottom: 8px;
+    }
+    .task-card .task-label {
+      display: inline-block;
+      background: var(--blue-pale);
+      color: var(--blue);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: .78rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .task-card p { font-size: .88rem; color: var(--slate-600); margin: 0; }
+
+    /* ── Sentence context display ───────────────────────────────────────────── */
+    .sent-display {
+      background: var(--slate-50);
+      border: 1px solid var(--slate-200);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: .95rem;
+      margin: 12px 0;
+      line-height: 2;
+    }
+    .sent-display .ctx-word { color: var(--slate-400); }
+    .sent-display .tgt-word {
+      background: #fef9c3;
+      color: #78350f;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+    .sent-display .predict-word {
+      background: var(--blue-dim);
+      color: #1d4ed8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    /* ── Query example buttons ──────────────────────────────────────────────── */
+    .query-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0; }
+    .query-chip {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: var(--blue-pale);
+      color: var(--blue);
+      border: 1px solid #bfdbfe;
+      font-size: .83rem;
+      font-family: ui-monospace, monospace;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background .12s, transform .1s;
+    }
+    .query-chip:hover { background: var(--blue-dim); transform: translateY(-1px); }
+
+    /* ── CTA ────────────────────────────────────────────────────────────────── */
+    .cta {
+      background: #fff;
+      border: 1px solid var(--slate-200);
+      border-radius: 16px;
+      padding: 48px 32px;
+      text-align: center;
+      margin-top: 52px;
+    }
+    .cta h2 { font-size: 1.6rem; font-weight: 800; color: var(--slate-900); margin-bottom: 12px; }
+    .cta p  { color: var(--slate-500); margin-bottom: 28px; }
+    .cta-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--blue);
+      color: #fff;
+      padding: 13px 32px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 1rem;
+      text-decoration: none;
+      transition: background .15s, transform .1s;
+    }
+    .cta-btn:hover { background: #2563eb; transform: translateY(-1px); }
+    .cta-sub { margin-top: 18px; font-size: .78rem; color: var(--slate-400); }
+
+    /* ── Responsive ─────────────────────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .page-body { padding: 36px 16px 80px; }
+      .hero h1   { font-size: 1.7rem; }
+      .section h2 { font-size: 1.35rem; }
+      .toc-bar   { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── Header ─────────────────────────────────────────────────────────────── -->
+<header class="page-header">
+  <a href="index.html" class="header-brand">
+    <svg width="22" height="22" viewBox="0 0 40 40" fill="none">
+      <circle cx="12" cy="16" r="4" fill="#3b82f6"/>
+      <circle cx="28" cy="16" r="4" fill="#ef4444"/>
+      <circle cx="20" cy="30" r="4" fill="#22c55e"/>
+      <line x1="12" y1="16" x2="28" y2="16" stroke="#94a3b8" stroke-width="2"/>
+      <line x1="12" y1="16" x2="20" y2="30" stroke="#94a3b8" stroke-width="2"/>
+      <line x1="28" y1="16" x2="20" y2="30" stroke="#94a3b8" stroke-width="2"/>
+    </svg>
+    GloVe Explorer
+  </a>
+  <nav class="header-nav">
+    <a href="index.html" class="nav-link">← Explorer</a>
+    <a href="explain.html" class="nav-link active">How it works</a>
+  </nav>
+</header>
+
+<!-- ─── Table of contents ──────────────────────────────────────────────────── -->
+<nav class="toc-bar" aria-label="Page sections">
+  <a href="#what"       class="toc-link">1 · What is an Embedding?</a>
+  <a href="#bagofwords" class="toc-link">2 · Bag of Words</a>
+  <a href="#similarity" class="toc-link">3 · Similarity</a>
+  <a href="#limits"     class="toc-link">4 · Limitations</a>
+  <a href="#context"    class="toc-link">5 · Context = Meaning</a>
+  <a href="#word2vec"   class="toc-link">6 · Word2Vec</a>
+  <a href="#glove"      class="toc-link">7 · GloVe</a>
+  <a href="#arithmetic" class="toc-link">8 · Vector Arithmetic</a>
+  <a href="#ready"      class="toc-link">9 · Try it →</a>
+</nav>
+
+<!-- ─── Content ────────────────────────────────────────────────────────────── -->
+<main class="page-body">
+
+  <div class="hero">
+    <div class="hero-eyebrow">GloVe Explorer · Explainer</div>
+    <h1>Word Embeddings,<br>from scratch</h1>
+    <p>How do you teach a computer what words <em>mean</em>? This page walks you through the full journey, from counting words in a table, all the way to 300-dimensional meaning spaces.</p>
+  </div>
+
+  <!-- ── 01 · What is an Embedding ──────────────────────────────────────────── -->
+  <section class="section" id="what">
+    <div class="section-num">01</div>
+    <h2>What is an Embedding?</h2>
+    <p>
+      An <strong>embedding</strong> is a way of representing something — a word, a sentence, a document,
+      an image — as a list of numbers called a <strong>vector</strong>.
+      On its own that sounds unremarkable. The magic is in <em>how</em> those numbers are chosen.
+    </p>
+    <p>
+      A good embedding places <strong>similar things close together</strong> in that numerical space.
+      If you embed every English word and look up the neighbors of "ocean",
+      you should find "sea", "river", "coast" — not "Tuesday" or "mortgage".
+      <strong>Meaning becomes measurable distance.</strong>
+    </p>
+    <div class="callout">
+      <strong>City-map analogy.</strong> Every location on Earth has exactly two numbers: latitude and longitude.
+      Places that are geographically close have numbers that are numerically close.
+      Word embeddings do the same for <em>meaning</em> — but with 50 to 300 numbers instead of 2,
+      and semantic proximity instead of physical distance.
+    </div>
+    <p>
+      This page focuses on <strong>word embeddings</strong> (one vector per word),
+      but the idea generalises: document embeddings, sentence embeddings and image embeddings follow the same principle.
+    </p>
+  </section>
+
+  <!-- ── 02 · Bag of Words / DFM ────────────────────────────────────────────── -->
+  <section class="section" id="bagofwords">
+    <div class="section-num">02</div>
+    <h2>The Simple Approach: Bag of Words</h2>
+    <p>
+      The most natural first attempt: <strong>count how often each word appears</strong> in each document
+      and arrange those counts into a matrix — such that rows represent documents and columns represent words.
+      This is called a <strong>Document-Feature Matrix (DFM)</strong>.
+    </p>
+    <p>
+      Each row is now a vector for that document.
+      Documents that use similar words get similar vectors, so we can already measure
+      something like "topical similarity", which is useful for search, recommendation, or clustering.
+    </p>
+
+    <!-- ── Interactive DFM demo ── -->
+    <div class="demo-box">
+      <div class="demo-head"><div class="demo-dot"></div>Interactive — Build a DFM</div>
+      <div class="demo-body">
+        <p style="font-size:.85rem;color:var(--slate-500);margin-bottom:16px;">
+          Edit any sentence below and watch the word-count matrix update live.
+          Non-zero cells are <span style="background:var(--blue-dim);color:#1d4ed8;padding:1px 5px;border-radius:3px;font-weight:700;font-size:.8rem;">highlighted</span>.
+        </p>
+        <div class="dfm-rows" id="dfm-rows">
+          <div class="dfm-row">
+            <span class="dfm-doc-label">Doc A</span>
+            <input class="dfm-input" data-doc="A" value="the cat sat on the mat" />
+          </div>
+          <div class="dfm-row">
+            <span class="dfm-doc-label">Doc B</span>
+            <input class="dfm-input" data-doc="B" value="the dog sat on the floor" />
+          </div>
+          <div class="dfm-row">
+            <span class="dfm-doc-label">Doc C</span>
+            <input class="dfm-input" data-doc="C" value="the cat chased the dog" />
+          </div>
+        </div>
+        <div class="dfm-scroll">
+          <table class="dfm-table" id="dfm-table"></table>
+        </div>
+        <p class="dfm-stat" id="dfm-stat"></p>
+      </div>
+    </div>
+
+    <p>
+      This already works surprisingly well for document-level comparisons.
+      Netflix-style recommendation ("if you liked <em>this</em> show, you might like <em>that</em> one")
+      is essentially this idea applied to viewing histories.
+    </p>
+    <p>
+      We can also extract <strong>word embeddings</strong> from this matrix:
+      each <em>column</em> is a vector for that word that reflects how the word is distributed across documents.
+      Words that appear in similar documents will have similar column vectors.
+    </p>
+  </section>
+
+  <!-- ── 03 · Similarity ────────────────────────────────────────────────────── -->
+  <section class="section" id="similarity">
+    <div class="section-num">03</div>
+    <h2>How Close is "Close"? — Cosine Similarity</h2>
+    <p>
+      Once we have vectors, we need a way to measure how similar they are.
+      The standard measure is <strong>cosine similarity</strong>: the cosine of the angle between two vectors.
+    </p>
+    <ul class="check-list pros" style="margin-bottom:14px;">
+      <li>Angle <strong>0°</strong> → similarity <strong>1.0</strong> — vectors point in the same direction, identical meaning</li>
+      <li>Angle <strong>90°</strong> → similarity <strong>0.0</strong> — vectors are perpendicular, unrelated</li>
+      <li>Angle <strong>180°</strong> → similarity <strong>−1.0</strong> — vectors point in opposite directions</li>
+    </ul>
+
+    <!-- ── Cosine similarity canvas ── -->
+    <div class="demo-box">
+      <div class="demo-head"><div class="demo-dot"></div>Interactive — Cosine Similarity</div>
+      <div class="demo-body">
+        <canvas id="cos-canvas" width="360" height="210"></canvas>
+        <div class="cos-controls">
+          <label class="cos-label">
+            <span style="color:var(--blue);font-weight:700;">A</span>
+            <input type="range" id="slider-a" min="5" max="175" value="25" style="width:90px;">
+          </label>
+          <label class="cos-label">
+            <span style="color:var(--red);font-weight:700;">B</span>
+            <input type="range" id="slider-b" min="5" max="175" value="75" style="width:90px;">
+          </label>
+          <span id="cos-score">sim = 0.87</span>
+        </div>
+        <p class="cos-hint">Drag the sliders to rotate the vectors. In real embeddings this happens in 50–300 dimensions — but the math is identical.</p>
+      </div>
+    </div>
+
+    <p>
+      The formula is simply the <strong>dot product</strong> of two unit-length vectors.
+      After normalising each vector to length 1, the dot product equals cos(θ) — the angle between them.
+    </p>
+    <div class="callout amber">
+      <strong>Why not Euclidean distance?</strong> Because we care about direction, not magnitude.
+      A long document that mentions "ocean" ten times is about the ocean just as much as a short one
+      that mentions it twice, they just differ in length.
+      Cosine similarity ignores length and focuses on orientation.
+    </div>
+  </section>
+
+  <!-- ── 04 · Limitations ──────────────────────────────────────────────────── -->
+  <section class="section" id="limits">
+    <div class="section-num">04</div>
+    <h2>The Problem with Counting</h2>
+    <p>
+      Bag-of-words embeddings are a solid starting point, but they have serious structural limitations:
+    </p>
+    <ul class="check-list cons">
+      <li><strong>Enormously sparse.</strong> A typical vocabulary has 50 000+ words. Most documents use only a small fraction — so over 95 % of the matrix is zeros.</li>
+      <li><strong>Synonyms are strangers.</strong> "automobile" and "car" never co-occur in the same document? Their cosine similarity is exactly 0.0, even though they mean the same thing.</li>
+      <li><strong>No word order.</strong> "The dog bites the man" and "The man bites the dog" produce <em>identical</em> bag-of-words vectors.</li>
+      <li><strong>No context sensitivity.</strong> "bank" gets the same vector whether it means a riverbank or a financial institution.</li>
+    </ul>
+    <p>
+      TF-IDF (down-weighting high-frequency words) helps with one of these problems.
+      Non-negative Matrix Factorisation can produce denser representations.
+      But the fundamental issue — that counting words in documents doesn't necessarily capture word <em>meaning</em> —
+      requires a completely different approach.
+    </p>
+  </section>
+
+  <!-- ── 05 · Context = Meaning ─────────────────────────────────────────────── -->
+  <section class="section" id="context">
+    <div class="section-num">05</div>
+    <h2>Context = Meaning — The Key Insight</h2>
+    <p>
+      In 1957, linguist John Rupert Firth wrote one of the most-quoted sentences in all of NLP:
+    </p>
+    <div class="callout" style="font-size:1.1rem;font-style:italic;">
+      "You shall know a word by the company it keeps."
+    </div>
+    <p>
+      This <strong>Distributional Hypothesis</strong> says: words that appear in similar
+      <em>contexts</em> carry similar meanings. We don't need a dictionary or hand-crafted rules —
+      we just need to observe how words are actually used.
+    </p>
+    <p>
+      Consider "ocean" and "sea". They appear in nearly identical surroundings:
+    </p>
+
+    <div class="context-row">
+      <div class="context-card">
+        <h5>Contexts of "ocean"</h5>
+        <p>
+          … sailed across the <span class="hl">ocean</span> …<br>
+          … deep <span class="hl">ocean</span> currents …<br>
+          … <span class="hl">ocean</span> floor exploration …<br>
+          … waves crashed on the <span class="hl">ocean</span> shore …
+        </p>
+      </div>
+      <div class="context-card">
+        <h5>Contexts of "sea"</h5>
+        <p>
+          … sailed across the <span class="hl">sea</span> …<br>
+          … deep <span class="hl">sea</span> currents …<br>
+          … <span class="hl">sea</span> floor exploration …<br>
+          … waves crashed on the <span class="hl">sea</span> shore …
+        </p>
+      </div>
+    </div>
+
+    <p>
+      Same contexts → similar meaning → they should end up close together in embedding space.
+      No labels, no human annotation. Just patterns across billions of sentences.
+    </p>
+    <p>
+      This is how embeddings can discover semantic relationships that no linguist explicitly programmed in.
+      The meaning was hiding in co-occurrence statistics all along.
+    </p>
+  </section>
+
+  <!-- ── 06 · Word2Vec ──────────────────────────────────────────────────────── -->
+  <section class="section" id="word2vec">
+    <div class="section-num">06</div>
+    <h2>Learning from Context: Word2Vec</h2>
+    <p>
+      In 2013, researchers at Google turned Firth's insight into a practical algorithm: <strong>Word2Vec</strong>.
+      The idea is elegantly indirect — train a small neural network on a prediction task,
+      then throw the predictions away and keep only the weights as embeddings.
+    </p>
+
+    <div class="task-grid">
+      <div class="task-card">
+        <div class="task-label">Skip-gram</div>
+        <h5>Predict the context</h5>
+        <p>Given a <strong>target word</strong>, predict which words are likely to appear nearby. Forces the model to encode what situations a word typically occurs in.</p>
+      </div>
+      <div class="task-card">
+        <div class="task-label">CBOW</div>
+        <h5>Predict the target</h5>
+        <p>Given the surrounding <strong>context words</strong>, predict the missing word. The reverse task — but both produce the same kind of embeddings.</p>
+      </div>
+    </div>
+
+    <p>For example, in the sentence:</p>
+    <div class="sent-display">
+      <span class="ctx-word">the</span> &nbsp;
+      <span class="ctx-word">cat</span> &nbsp;
+      <span class="tgt-word">sat</span> &nbsp;
+      <span class="ctx-word">on</span> &nbsp;
+      <span class="ctx-word">the</span> &nbsp;
+      <span class="ctx-word">mat</span>
+    </div>
+    <p>
+      The <span style="background:#fef9c3;padding:1px 4px;border-radius:3px;font-weight:700;color:#78350f;">target word</span> is "sat".
+      The skip-gram model tries to predict <span style="background:var(--blue-dim);color:#1d4ed8;padding:1px 4px;border-radius:3px;font-weight:600;">context words</span> like "cat", "on", "mat" from it.
+    </p>
+    <p>
+      The network sees hundreds of millions of such examples.
+      After training, <strong>words that appear in similar contexts end up with similar weight vectors</strong> —
+      because they activate similar patterns in the network.
+      Those weight vectors are the word embeddings.
+    </p>
+    <p>
+      The neural network itself is discarded. What remains is a simple lookup table:
+      one compact vector per word in the vocabulary, learned purely from unlabelled text.
+    </p>
+  </section>
+
+  <!-- ── 07 · GloVe ─────────────────────────────────────────────────────────── -->
+  <section class="section" id="glove">
+    <div class="section-num">07</div>
+    <h2>GloVe: The Global Picture</h2>
+    <p>
+      Word2Vec learns from a <em>sliding window</em> — each training step sees only the immediate
+      neighborhood of one word. In 2014, Stanford researchers Jeffrey Pennington, Richard Socher,
+      and Christopher Manning took a step back and asked:
+      why not use the <strong>full co-occurrence statistics</strong> of the entire corpus at once?
+    </p>
+    <p>
+      <strong>GloVe (Global Vectors for Word Representation)</strong> first builds a massive matrix:
+      for every pair of words, how often do they appear within a window of each other across the entire corpus?
+      It then finds a low-dimensional factorisation of that matrix —
+      compact vectors whose dot products best reconstruct the observed co-occurrence ratios.
+    </p>
+
+    <div class="info-box">
+      <div class="info-box-title">Word2Vec vs. GloVe at a glance</div>
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Word2Vec</th>
+            <th>GloVe</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Training signal</td>
+            <td>Local sliding windows</td>
+            <td>Global co-occurrence matrix</td>
+          </tr>
+          <tr>
+            <td>Method</td>
+            <td>Neural network (gradient descent)</td>
+            <td>Matrix factorisation (weighted least squares)</td>
+          </tr>
+          <tr>
+            <td>Training data</td>
+            <td>Google News (~100B tokens)</td>
+            <td>Wikipedia + Gigaword (~6B tokens)</td>
+          </tr>
+          <tr>
+            <td>Result quality</td>
+            <td colspan="2" style="text-align:center;color:var(--slate-500);font-style:italic;">Comparable — both capture semantic structure well</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      In practice, both models produce high-quality embeddings.
+      GloVe is generally faster to train and tends to do slightly better on analogy benchmarks.
+      The vectors in this Explorer are GloVe embeddings pre-trained on 6 billion words of Wikipedia
+      and Gigaword text — available in 50-dimensional and 300-dimensional versions.
+    </p>
+    <p>
+      Here is the actual GloVe vector for the word <strong>"king"</strong> (50 dimensions):
+    </p>
+    <div class="sent-display" style="font-family:ui-monospace,monospace;font-size:.78rem;line-height:1.8;word-break:break-all;">
+      [ 0.505, 0.686, −0.595, −0.023, 0.600, −0.135, −0.088, 0.474, −0.618, −0.310,
+      −0.077, 1.493, −0.034, −0.982, 0.682, 0.817, −0.519, −0.315, −0.558, 0.664,
+      0.196, −0.135, −0.115, −0.303, 0.412, −2.223, −1.076, −1.078, −0.344, 0.335,
+      1.993, −0.042, −0.643, 0.711, 0.492, 0.168, 0.343, −0.257, −0.852, 0.166,
+      0.401, 1.169, −1.014, −0.216, −0.152, 0.783, −0.912, −1.611, −0.644, −0.510 ]
+    </div>
+    <p>
+      Fifty numbers that, together, encode everything the model has learned
+      about what "king" means from billions of sentences — whom it co-occurs with,
+      what topics it appears in, what it tends to precede and follow.
+    </p>
+    <p>
+      Do these numbers have any meaning individually? Mostly not — they are distributed, entangled representations.
+      But the <strong>relationships between vectors</strong> are where the magic lives.
+    </p>
+  </section>
+
+  <!-- ── 08 · Vector Arithmetic ─────────────────────────────────────────────── -->
+  <section class="section" id="arithmetic">
+    <div class="section-num">08</div>
+    <h2>The Magic: Vector Arithmetic</h2>
+    <p>
+      The most surprising property of well-trained word embeddings:
+      you can <em>do arithmetic with meaning</em>.
+    </p>
+
+    <div class="word-math">
+      <span class="pill pill-a">paris</span>
+      <span class="op">−</span>
+      <span class="pill pill-b">france</span>
+      <span class="op">+</span>
+      <span class="pill pill-c">germany</span>
+      <span class="op">≈</span>
+      <span class="pill pill-r">berlin</span>
+    </div>
+
+    <p>
+      Why does this work? The embedding space has learned geometric <strong>directions</strong>
+      that encode abstract relationships.
+      The vector pointing from any country to its capital is roughly constant across many countries:
+    </p>
+    <p style="text-align:center;font-style:italic;color:var(--slate-500);margin:4px 0 18px;">
+      vec("paris") − vec("france") &nbsp;≈&nbsp; vec("berlin") − vec("germany") &nbsp;≈&nbsp; vec("rome") − vec("italy")
+    </p>
+    <p>
+      This direction in embedding space encodes the concept "capital of".
+      No one programmed it in — it <em>emerged</em> from reading billions of sentences.
+    </p>
+
+    <div class="word-math">
+      <span class="pill pill-a">good</span>
+      <span class="op">−</span>
+      <span class="pill pill-b">bad</span>
+      <span class="op">≈</span>
+      <span class="pill pill-a">happy</span>
+      <span class="op">−</span>
+      <span class="pill pill-b">sad</span>
+    </div>
+
+    <p>
+      The difference <em>good − bad</em> captures something like "positive sentiment".
+      The same direction works for many other word pairs because the model has learned
+      a consistent geometry for evaluative polarity.
+    </p>
+    <p>
+      This is why the Explorer lets you type expressions like
+      <code style="background:var(--slate-100);padding:2px 6px;border-radius:4px;">paris - france + germany</code>
+      and find the nearest neighbors to the resulting vector.
+      Try these:
+    </p>
+    <div class="query-chips">
+      <a class="query-chip" href="index.html?q=paris%20-%20france%20%2B%20germany">paris − france + germany</a>
+      <a class="query-chip" href="index.html?q=good%20-%20bad">good − bad</a>
+      <a class="query-chip" href="index.html?q=summer%2C%20winter%2C%20spring">summer, winter, spring</a>
+      <a class="query-chip" href="index.html?q=!hello">!hello — farthest from "hello"</a>
+    </div>
+    <p style="font-size:.82rem;color:var(--slate-400);font-style:italic;">
+      Each button opens the Explorer with the expression pre-loaded.
+    </p>
+    <p>
+      Not every analogy works perfectly — the model has 6 billion words of experience,
+      but language is complicated. The failures are often just as instructive as the successes.
+    </p>
+  </section>
+
+  <!-- ── CTA ────────────────────────────────────────────────────────────────── -->
+  <div class="cta" id="ready">
+    <div style="font-size:2.2rem;margin-bottom:14px;">🧭</div>
+    <h2>You're ready to explore</h2>
+    <p>You now know where embeddings come from, why they work, and what you can do with them.<br>Go see it for yourself.</p>
+    <a href="index.html" class="cta-btn">Open the Explorer →</a>
+    <p class="cta-sub">GloVe 6B · Stanford NLP · 50d and 300d models · runs entirely in your browser</p>
+  </div>
+
+</main>
+
+<script>
+// ── DFM interactive demo ──────────────────────────────────────────────────────
+
+function tokenize(s) {
+  return s.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean);
+}
+
+function renderDFM() {
+  const inputs = [...document.querySelectorAll('#dfm-rows .dfm-input')];
+  const docs = inputs.map(inp => ({
+    label: inp.dataset.doc,
+    tokens: tokenize(inp.value)
+  }));
+
+  // Build ordered vocabulary (first-appearance order)
+  const seen = new Set(), vocab = [];
+  docs.forEach(d => d.tokens.forEach(t => { if (!seen.has(t)) { seen.add(t); vocab.push(t); } }));
+
+  // Count per doc
+  docs.forEach(d => {
+    d.counts = {};
+    d.tokens.forEach(t => d.counts[t] = (d.counts[t] || 0) + 1);
+  });
+
+  // Build table HTML
+  const table = document.getElementById('dfm-table');
+  let html = '<thead><tr><th>doc \\ word</th>';
+  vocab.forEach(w => html += `<th>${w}</th>`);
+  html += '</tr></thead><tbody>';
+  docs.forEach(d => {
+    html += `<tr><td class="row-label">Doc ${d.label}</td>`;
+    vocab.forEach(w => {
+      const v = d.counts[w] || 0;
+      html += `<td class="${v ? 'nz' : ''}">${v}</td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody>';
+  table.innerHTML = html;
+
+  // Sparsity stat
+  const total = vocab.length * docs.length;
+  const zeros = docs.reduce((s, d) => s + vocab.filter(w => !d.counts[w]).length, 0);
+  const sparsity = total ? Math.round(zeros / total * 100) : 0;
+  document.getElementById('dfm-stat').textContent =
+    `${vocab.length} unique words → ${vocab.length} dimensions per document. ${sparsity}% of cells are zero.`;
+}
+
+document.querySelectorAll('#dfm-rows .dfm-input').forEach(inp => inp.addEventListener('input', renderDFM));
+renderDFM();
+
+// ── Cosine similarity canvas ──────────────────────────────────────────────────
+
+const canvas  = document.getElementById('cos-canvas');
+const ctx     = canvas.getContext('2d');
+const slA     = document.getElementById('slider-a');
+const slB     = document.getElementById('slider-b');
+const scoreEl = document.getElementById('cos-score');
+
+function drawCosine() {
+  const W = canvas.width, H = canvas.height;
+  const cx = W / 2, cy = H / 2 + 14, R = 85;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid lines
+  ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(16, cy);  ctx.lineTo(W - 16, cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx, 16);  ctx.lineTo(cx, H - 10); ctx.stroke();
+
+  const degA = +slA.value, degB = +slB.value;
+  const radA = degA * Math.PI / 180;
+  const radB = degB * Math.PI / 180;
+  const ax = cx + R * Math.cos(radA), ay = cy - R * Math.sin(radA);
+  const bx = cx + R * Math.cos(radB), by = cy - R * Math.sin(radB);
+
+  // Arc between the two vectors
+  const r1 = Math.min(radA, radB), r2 = Math.max(radA, radB);
+  ctx.beginPath();
+  ctx.arc(cx, cy, 26, -r2, -r1);
+  ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 2; ctx.stroke();
+  // angle label
+  const midR = (r1 + r2) / 2;
+  ctx.fillStyle = '#f59e0b'; ctx.font = '11px system-ui';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(`${Math.abs(degA - degB)}°`, cx + 40 * Math.cos(-(r1+r2)/2), cy - 40 * Math.sin((r1+r2)/2));
+
+  // Helper: draw an arrow
+  function arrow(x1, y1, x2, y2, color, label) {
+    const ang = Math.atan2(y2 - y1, x2 - x1);
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+    ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.stroke();
+    // arrowhead
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - 13*Math.cos(ang-0.38), y2 - 13*Math.sin(ang-0.38));
+    ctx.lineTo(x2 - 13*Math.cos(ang+0.38), y2 - 13*Math.sin(ang+0.38));
+    ctx.closePath(); ctx.fillStyle = color; ctx.fill();
+    // label
+    ctx.fillStyle = color; ctx.font = 'bold 14px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(label, x2 + 18*Math.cos(ang), y2 + 18*Math.sin(ang));
+  }
+
+  arrow(cx, cy, ax, ay, '#3b82f6', 'A');
+  arrow(cx, cy, bx, by, '#ef4444', 'B');
+
+  // Score
+  const sim = Math.cos((degA - degB) * Math.PI / 180);
+  scoreEl.textContent = `sim = ${sim.toFixed(3)}`;
+  scoreEl.style.color = sim > 0.6 ? '#16a34a' : sim < 0 ? '#dc2626' : '#64748b';
+}
+
+slA.addEventListener('input', drawCosine);
+slB.addEventListener('input', drawCosine);
+drawCosine();
+</script>
+
+</body>
+</html>

@@ -68,10 +68,18 @@ async function startLoading(modelId) {
 
     if (!isSwitch) overlay.classList.add('hidden');
 
-    // Re-run last query with new model if there was one
+    // Re-run last query with new model if there was one;
+    // also pick up ?q= URL param on initial load (e.g. from explain.html links)
     const input = document.getElementById('query-input');
-    if (input.value.trim()) runQuery(input.value);
-    else input.focus();
+    if (input.value.trim()) {
+      runQuery(input.value);
+    } else if (!isSwitch) {
+      const urlQ = new URLSearchParams(window.location.search).get('q');
+      if (urlQ) { input.value = urlQ; runQuery(urlQ); }
+      else input.focus();
+    } else {
+      input.focus();
+    }
 
   } catch (err) {
     _setStatus('error', 'Error');

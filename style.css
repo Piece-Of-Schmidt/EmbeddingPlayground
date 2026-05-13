@@ -128,6 +128,20 @@ html, body {
   color: var(--slate-600, var(--slate-500));
   font-variant-numeric: tabular-nums;
 }
+.explain-link {
+  font-size: .78rem;
+  color: var(--slate-500);
+  text-decoration: none;
+  padding: 3px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--slate-200);
+  transition: background .12s, color .12s, border-color .12s;
+}
+.explain-link:hover {
+  background: var(--blue-pale, #eff6ff);
+  color: var(--blue);
+  border-color: #bfdbfe;
+}
 .model-select-wrapper {
   display: flex; align-items: center; gap: 6px;
 }
